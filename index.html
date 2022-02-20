@@ -1,7 +1,62 @@
 <!-- saved from url=(0014)about:internet -->
+<html>
 <head>
 <title>My Website</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"><style type="text/css">
+<meta http-equiv="mrc-Type" content="text/html; charset=utf-8">
+<SCRIPT>
+<!--
+var flyingwin
+var popupwidth=200
+var popupheight=150
+var marginright
+var windowcenter
+var i_top=200
+var i_left=-popupwidth-50
+var step=40
+var timer
+var waitingtime=3000
+var pause=20
+function showWindow() {
+	flyingwin = window.open("", "flyingwin", "toolbar=no,width="+popupwidth+",height="+popupheight+",top=100,left="+(-popupwidth)+"");
+	flyingwin.document.open();
+	flyingwin.document.write("<html><title>欢迎来到我的网站</title><body><p align=center><p>往下拉该弹窗有惊喜</p><p>.</p><p>.</p><p>.</p><p>.</p><p>5</p><p>.</p><p>.</p><p>.</p><p>4</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>3</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>2</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>.</p><p>1</p><p>.</p><p>.</p><p>.</p><p>惊喜</p></body></html>");
+	flyingwin.document.close();
+	
+	if (document.all) {
+		marginright = screen.width+50
+	}
+	if (document.layers) {
+		marginright = screen.width+50
+	}
+	windowcenter=Math.floor(marginright/2)-Math.floor(popupwidth/2)
+	movewindow()
+		
+}
+function movewindow() {
+		if (i_left<=windowcenter) {
+			flyingwin.moveTo(i_left,i_top)
+			i_left+=step
+			timer= setTimeout("movewindow()",pause)
+		}
+		else {
+			clearTimeout(timer)
+			timer= setTimeout("movewindow2()",waitingtime)
+		}
+}
+function movewindow2() {
+		if (i_left<=marginright) {
+			flyingwin.moveTo(i_left,i_top)
+			i_left+=step
+			timer= setTimeout("movewindow2()",pause)
+		}
+		else {
+			clearTimeout(timer)
+			flyingwin.close()
+		}
+}
+// -->
+</SCRIPT> 
+<style type="text/css">
 <!--
 body {
 	background-image: url(image/1.jpeg);
@@ -64,7 +119,7 @@ body {
 }
 #Layer5 {
 	position:absolute;
-	width:200px;
+	width:356px;
 	height:115px;
 	z-index:4;
 	left: 100px;
@@ -90,9 +145,12 @@ body {
 </style>
 </head>
 
-<body>
+<body onload=showWindow()>
 <div id="Layer4"><span class="标题">主页</span></div>
-<div id="Layer5">欢迎来到我的主页！</div>
+<div id="Layer5">
+  <p>欢迎来到我的主页！</p>
+  <p>提示：请不要阻止弹窗</p>
+</div>
 <p>&nbsp;</p>
 <div id="Layer1"><span class="STYLE4">My Website</span></div>
 <div id="Layer3">
