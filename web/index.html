@@ -19,6 +19,9 @@
     margin-bottom: 16px;
     color: #f0c674;
   }
+  /* ★ 统一隐藏 class，替代 style.display 混用 */
+  .hidden { display: none !important; }
+
   .status-bar {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -251,6 +254,41 @@
     padding: 40px;
     color: #8a9bb0;
   }
+  .loading .step {
+    margin: 6px 0;
+    font-size: 14px;
+  }
+  .error-box {
+    background: #2a1f1f;
+    border: 1px solid #d97757;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 640px;
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .error-box h2 {
+    color: #d97757;
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .error-box code {
+    background: #1f232c;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "Menlo", monospace;
+    font-size: 12px;
+    color: #f0c674;
+    word-break: break-all;
+  }
+  .error-box ul {
+    margin: 8px 0 0 20px;
+  }
+  .error-box li {
+    margin-bottom: 6px;
+  }
   .view-empty {
     text-align: center;
     padding: 30px;
@@ -262,8 +300,17 @@
 <body>
 <div class="container">
   <h1>结 · 1v1 人机对战</h1>
-  <div id="loading" class="loading">正在加载策略表…</div>
-  <div id="game" style="display:none">
+
+  <!-- 加载中 -->
+  <div id="loading" class="loading">
+    <div id="loading-steps"></div>
+  </div>
+
+  <!-- 错误提示 -->
+  <div id="error-box" class="error-box hidden"></div>
+
+  <!-- 游戏主界面 -->
+  <div id="game" class="hidden">
     <div class="status-bar">
       <div class="player-card p0" id="card-p0">
         <div class="name">P0（你）</div>
@@ -293,7 +340,7 @@
         <button class="btn" onclick="confirmAttack()">确认</button>
         <button class="btn secondary" onclick="cancelAttack()">取消</button>
       </div>
-      <div id="game-over-box" style="display:none"></div>
+      <div id="game-over-box" class="hidden"></div>
     </div>
 
     <div class="panel">
@@ -310,7 +357,7 @@
         </div>
         <div id="dist-list"></div>
       </div>
-      <div id="view-empty" class="view-empty" style="display:none">
+      <div id="view-empty" class="view-empty hidden">
         （当前不显示分析）
       </div>
     </div>
@@ -353,7 +400,7 @@ const SKILLS = {
   24: {name:"世界末日", type:"ATK", cost:20, dmg:10, unblockable:true},
 };
 
-// ★ 关键修复 1：给每个技能加 id 字段
+// 给每个技能补上 id
 for (const sid in SKILLS) {
   SKILLS[sid].id = parseInt(sid);
 }
@@ -446,14 +493,13 @@ function runOneRound(a0, a1) {
   const sk1 = SKILLS[a1.sid];
   const n0 = a0.n, n1 = a1.n;
 
-  // 先付费
   applyMove(p0, sk0, n0);
   applyMove(p1, sk1, n1);
 
   let dmg0 = 0, dmg1 = 0;
   let pts0 = 0, tix0 = 0, pts1 = 0, tix1 = 0;
 
-  // ★ 关键修复 2：用 sk.id（已初始化）
+  // 拉/大拉惩罚
   if (sk0.pull && sk1.type === "DRAIN") {
     const isBig = sk0.big;
     if (sk1.id === 15) dmg1 += isBig ? 2 : 1;
@@ -491,23 +537,19 @@ function runOneRound(a0, a1) {
     dmg1 += sk1.big ? 2.5 : 1.5;
   }
 
-  // 应用伤害
   p0.hp -= dmg0;
   p1.hp -= dmg1;
 
-  // 应用资源
   p0.pt += pts0;
   p0.tk += tix0;
   p1.pt += pts1;
   p1.tk += tix1;
 
-  // 封顶
   p0.pt = Math.max(0, Math.min(PT_MAX, p0.pt));
   p0.tk = Math.max(0, Math.min(TK_MAX, p0.tk));
   p1.pt = Math.max(0, Math.min(PT_MAX, p1.pt));
   p1.tk = Math.max(0, Math.min(TK_MAX, p1.tk));
 
-  // 死亡
   if (p0.hp <= 0) p0.dead = true;
   if (p1.hp <= 0) p1.dead = true;
 }
@@ -577,14 +619,9 @@ function renderSkillButtons() {
       <span class="sk-desc">${skillShortDesc(sk)}</span>
     `;
 
-    let usable = true;
-    if (sk.type === "ATK") {
-      if (!canAfford(p0, sk, 1)) usable = false;
-    } else {
-      if (!canAfford(p0, sk, 1)) usable = false;
-    }
+    let usable = canAfford(p0, sk, 1);
 
-    if (gameOver || p0.dead || usable === false) {
+    if (gameOver || p0.dead || !usable) {
       btn.disabled = true;
     } else {
       btn.onclick = () => selectSkill(sk);
@@ -655,7 +692,6 @@ function playRound(playerAction) {
     return;
   }
 
-  // AI 出招（从 P1 视角查表）
   const distAI = queryPI(p1, p0);
   const aiAction = sampleDist(distAI);
 
@@ -665,7 +701,6 @@ function playRound(playerAction) {
 
   runOneRound(playerAction, aiAction);
 
-  // 日志
   appendLog(`<span class="round-line">── 第 ${state.round} 轮 ──</span>`);
   appendLog(`<span class="result-line">P0: ${actionLabel(playerAction)}</span>`);
   appendLog(`<span class="result-line">P1: ${actionLabel(aiAction)}</span>`);
@@ -682,7 +717,6 @@ function playRound(playerAction) {
   pendingAttack = null;
   document.getElementById("input-area").classList.remove("active");
 
-  // 检查胜负
   if (p0.dead || p1.dead) {
     gameOver = true;
     let msg = "", cls = "";
@@ -691,19 +725,18 @@ function playRound(playerAction) {
     else { msg = "P0 胜"; cls = "win"; }
     appendLog(`<span class="round-line">结果：${msg}</span>`);
 
-    // ★ 关键修复 3：不替换 skill-panel 的 innerHTML
+    // ★ 用 hidden class 而不是 style.display
     document.getElementById("game-over-box").innerHTML =
       `<div class="game-over ${cls}">${msg}</div>`;
-    document.getElementById("game-over-box").style.display = "block";
-    document.getElementById("skill-grid").style.display = "none";
-    document.getElementById("input-area").style.display = "none";
+    document.getElementById("game-over-box").classList.remove("hidden");
+    document.getElementById("skill-grid").classList.add("hidden");
+    document.getElementById("input-area").classList.add("hidden");
   }
 
   render();
 }
 
 function formatNum(x) {
-  // 2 -> "2";  0.5 -> "0.5";  1.5 -> "1.5"
   return parseFloat(x.toFixed(2)).toString();
 }
 
@@ -734,12 +767,12 @@ function renderView() {
   const empty = document.getElementById("view-empty");
 
   if (currentView === -1) {
-    content.style.display = "none";
-    empty.style.display = "block";
+    content.classList.add("hidden");
+    empty.classList.remove("hidden");
     return;
   }
-  content.style.display = "block";
-  empty.style.display = "none";
+  content.classList.remove("hidden");
+  empty.classList.add("hidden");
 
   const p0 = state.players[0];
   const p1 = state.players[1];
@@ -786,7 +819,7 @@ function renderView() {
   }
 }
 
-// ==================== 初始化 ====================
+// ==================== 初始化 / 重置 ====================
 function resetGame() {
   state = {
     players: [makePlayer(), makePlayer()],
@@ -795,35 +828,105 @@ function resetGame() {
   gameOver = false;
   pendingAttack = null;
 
-  // ★ 关键修复 4：恢复被 game over 修改的显示状态
   document.getElementById("log").innerHTML = "";
+
+  // ★ 全部用 class 控制显隐，避免 style.display 残留
   document.getElementById("input-area").classList.remove("active");
-  document.getElementById("game-over-box").style.display = "none";
+  document.getElementById("input-area").classList.remove("hidden");
+  document.getElementById("game-over-box").classList.add("hidden");
   document.getElementById("game-over-box").innerHTML = "";
-  document.getElementById("skill-grid").style.display = "grid";
+  document.getElementById("skill-grid").classList.remove("hidden");
 
   render();
   appendLog("=== 游戏开始 ===");
 }
 
+// ==================== 加载策略表 ====================
+function showLoading(msg) {
+  const el = document.getElementById("loading-steps");
+  el.innerHTML += `<div class="step">${msg}</div>`;
+}
+
+function showError(title, detail) {
+  document.getElementById("loading").classList.add("hidden");
+  const box = document.getElementById("error-box");
+  box.innerHTML = `
+    <h2>❌ ${title}</h2>
+    ${detail}
+  `;
+  box.classList.remove("hidden");
+}
+
+async function loadJSON(name) {
+  const url = new URL(name, location.href).href;
+  showLoading(`加载 ${name} …`);
+  const res = await fetch(name);
+  if (!res.ok) {
+    throw {
+      stage: "fetch",
+      name: name,
+      status: res.status,
+      url: url,
+    };
+  }
+  showLoading(`解析 ${name} …`);
+  try {
+    return await res.json();
+  } catch (e) {
+    throw {
+      stage: "parse",
+      name: name,
+      url: url,
+      message: e.message,
+    };
+  }
+}
+
 async function init() {
   try {
-    const [vRes, piRes] = await Promise.all([
-      fetch("jie_V.json"),
-      fetch("jie_pi.json"),
-    ]);
-    V_TABLE = await vRes.json();
-    PI_TABLE = await piRes.json();
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("game").style.display = "block";
+    V_TABLE = await loadJSON("jie_V.json");
+    PI_TABLE = await loadJSON("jie_pi.json");
+
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
     resetGame();
   } catch (e) {
-    document.getElementById("loading").innerHTML =
-      `加载失败：${e.message}<br><br>` +
-      `请确保已运行 export_for_web.py，并用 HTTP 服务器打开本页面（不能直接双击打开）。<br><br>` +
-      `示例：<br>` +
-      `<code>cd web &amp;&amp; python -m http.server 8000</code><br>` +
-      `然后打开 <code>http://localhost:8000</code>`;
+    console.error("加载失败：", e);
+
+    if (e.stage === "fetch") {
+      showError(
+        `无法加载 ${e.name}`,
+        `<p>HTTP 状态码：<code>${e.status}</code></p>
+         <p>尝试加载的 URL：<br><code>${e.url}</code></p>
+         <p>排查步骤：</p>
+         <ul>
+           <li>直接在浏览器打开上面的 URL，看是否 404</li>
+           <li>确认 <code>${e.name}</code> 已经上传到仓库</li>
+           <li>确认 <code>${e.name}</code> 和 <code>index.html</code> 在同一目录</li>
+           <li>确认文件名大小写完全一致（Linux 服务器区分大小写）</li>
+           <li>如果刚 push，等 1~2 分钟让 GitHub Pages 构建完成</li>
+           <li>打开 DevTools → Network 面板，勾选 Disable cache 再刷新</li>
+         </ul>`
+      );
+    } else if (e.stage === "parse") {
+      showError(
+        `无法解析 ${e.name}`,
+        `<p>文件已下载，但不是有效的 JSON。</p>
+         <p>URL：<code>${e.url}</code></p>
+         <p>错误信息：<code>${e.message}</code></p>
+         <p>可能原因：</p>
+         <ul>
+           <li>文件被意外截断或损坏</li>
+           <li>该 URL 返回的是 HTML（比如 404 页面），不是 JSON</li>
+           <li>尝试重新运行 <code>export_for_web.py</code> 生成 JSON</li>
+         </ul>`
+      );
+    } else {
+      showError(
+        "未知错误",
+        `<p>${e.message || JSON.stringify(e)}</p>`
+      );
+    }
   }
 }
 
