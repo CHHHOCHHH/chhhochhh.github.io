@@ -19,7 +19,6 @@
     margin-bottom: 16px;
     color: #f0c674;
   }
-  /* ★ 统一隐藏 class，替代 style.display 混用 */
   .hidden { display: none !important; }
 
   .status-bar {
@@ -301,15 +300,12 @@
 <div class="container">
   <h1>结 · 1v1 人机对战</h1>
 
-  <!-- 加载中 -->
   <div id="loading" class="loading">
     <div id="loading-steps"></div>
   </div>
 
-  <!-- 错误提示 -->
   <div id="error-box" class="error-box hidden"></div>
 
-  <!-- 游戏主界面 -->
   <div id="game" class="hidden">
     <div class="status-bar">
       <div class="player-card p0" id="card-p0">
@@ -399,11 +395,7 @@ const SKILLS = {
   23: {name:"金龙收", type:"NORM", cost:1, def_ids:[12]},
   24: {name:"世界末日", type:"ATK", cost:20, dmg:10, unblockable:true},
 };
-
-// 给每个技能补上 id
-for (const sid in SKILLS) {
-  SKILLS[sid].id = parseInt(sid);
-}
+for (const sid in SKILLS) SKILLS[sid].id = parseInt(sid);
 
 const HP_MIN = 1, HP_MAX = 4, PT_MAX = 20, TK_MAX = 2;
 
@@ -411,7 +403,7 @@ const HP_MIN = 1, HP_MAX = 4, PT_MAX = 20, TK_MAX = 2;
 let state = null;
 let V_TABLE = null;
 let PI_TABLE = null;
-let currentView = 0;   // -1 = 不显示, 0 = P0 视角, 1 = P1 视角
+let currentView = 0;
 let pendingAttack = null;
 let gameOver = false;
 
@@ -470,9 +462,7 @@ function resolveAtkVsAtk(sk0, n0, sk1, n1) {
 
 function resolveAtkVsDef(atkSk, n, defSk) {
   if (defValid(defSk, atkSk)) {
-    if (defSk.rebound) {
-      return [0, atkSk.dmg * n, 0, 0];
-    }
+    if (defSk.rebound) return [0, atkSk.dmg * n, 0, 0];
     const [pts, tix] = computeDrain(defSk, atkSk, n);
     return [0, 0, pts, tix];
   }
@@ -499,7 +489,6 @@ function runOneRound(a0, a1) {
   let dmg0 = 0, dmg1 = 0;
   let pts0 = 0, tix0 = 0, pts1 = 0, tix1 = 0;
 
-  // 拉/大拉惩罚
   if (sk0.pull && sk1.type === "DRAIN") {
     const isBig = sk0.big;
     if (sk1.id === 15) dmg1 += isBig ? 2 : 1;
@@ -511,7 +500,6 @@ function runOneRound(a0, a1) {
     else if (sk0.id === 16) dmg0 += isBig ? 4 : 2;
   }
 
-  // 攻击结算
   if (sk0.type === "ATK" && sk1.type === "ATK") {
     const [d0, d1] = resolveAtkVsAtk(sk0, n0, sk1, n1);
     dmg0 += d0; dmg1 += d1;
@@ -529,13 +517,8 @@ function runOneRound(a0, a1) {
     dmg0 += sk1.dmg * n1;
   }
 
-  // 摩擦/大摩自扣血
-  if (sk0.friction && sk1.type !== "ATK") {
-    dmg0 += sk0.big ? 2.5 : 1.5;
-  }
-  if (sk1.friction && sk0.type !== "ATK") {
-    dmg1 += sk1.big ? 2.5 : 1.5;
-  }
+  if (sk0.friction && sk1.type !== "ATK") dmg0 += sk0.big ? 2.5 : 1.5;
+  if (sk1.friction && sk0.type !== "ATK") dmg1 += sk1.big ? 2.5 : 1.5;
 
   p0.hp -= dmg0;
   p1.hp -= dmg1;
@@ -725,7 +708,6 @@ function playRound(playerAction) {
     else { msg = "P0 胜"; cls = "win"; }
     appendLog(`<span class="round-line">结果：${msg}</span>`);
 
-    // ★ 用 hidden class 而不是 style.display
     document.getElementById("game-over-box").innerHTML =
       `<div class="game-over ${cls}">${msg}</div>`;
     document.getElementById("game-over-box").classList.remove("hidden");
@@ -829,8 +811,6 @@ function resetGame() {
   pendingAttack = null;
 
   document.getElementById("log").innerHTML = "";
-
-  // ★ 全部用 class 控制显隐，避免 style.display 残留
   document.getElementById("input-area").classList.remove("active");
   document.getElementById("input-area").classList.remove("hidden");
   document.getElementById("game-over-box").classList.add("hidden");
@@ -841,51 +821,113 @@ function resetGame() {
   appendLog("=== 游戏开始 ===");
 }
 
-// ==================== 加载策略表 ====================
+// ==================== 加载策略表（带 gzip 支持） ====================
 function showLoading(msg) {
   const el = document.getElementById("loading-steps");
   el.innerHTML += `<div class="step">${msg}</div>`;
+  console.log("[加载]", msg);
 }
 
 function showError(title, detail) {
   document.getElementById("loading").classList.add("hidden");
   const box = document.getElementById("error-box");
-  box.innerHTML = `
-    <h2>❌ ${title}</h2>
-    ${detail}
-  `;
+  box.innerHTML = `<h2>❌ ${title}</h2>${detail}`;
   box.classList.remove("hidden");
 }
 
+function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
+async function gunzipText(arrayBuffer) {
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("浏览器不支持 DecompressionStream");
+  }
+  const ds = new DecompressionStream("gzip");
+  const stream = new Blob([arrayBuffer]).stream().pipeThrough(ds);
+  return await new Response(stream).text();
+}
+
 async function loadJSON(name) {
-  const url = new URL(name, location.href).href;
-  showLoading(`加载 ${name} …`);
-  const res = await fetch(name);
-  if (!res.ok) {
-    throw {
-      stage: "fetch",
-      name: name,
-      status: res.status,
-      url: url,
-    };
+  const suffixes = [".json.gz", ".gz", ".json"];
+  let lastError = null;
+
+  for (const suffix of suffixes) {
+    const fileName = name + suffix;
+    const url = new URL(fileName, location.href).href;
+
+    showLoading(`尝试 ${fileName} …`);
+
+    let res;
+    try {
+      res = await fetchWithTimeout(fileName, 60000);
+    } catch (netErr) {
+      const msg = netErr.name === "AbortError"
+        ? `${fileName} 请求超时`
+        : `${fileName} 网络错误`;
+      lastError = { stage: "network", fileName, url, message: msg };
+      showLoading(`  ✗ ${msg}，尝试下一个`);
+      continue;
+    }
+
+    if (!res.ok) {
+      lastError = { stage: "http", fileName, url, status: res.status,
+        message: `${fileName} 返回 HTTP ${res.status}` };
+      showLoading(`  ✗ HTTP ${res.status}，尝试下一个`);
+      continue;
+    }
+
+    try {
+      let text;
+      if (suffix === ".json") {
+        text = await res.text();
+        if (!text || text.length === 0) {
+          lastError = { stage: "empty", fileName, url,
+            message: `${fileName} 是空文件` };
+          continue;
+        }
+        const firstChar = text.trim()[0];
+        if (firstChar !== "{" && firstChar !== "[") {
+          lastError = { stage: "notjson", fileName, url,
+            preview: text.slice(0, 200),
+            message: `${fileName} 不是有效 JSON` };
+          continue;
+        }
+      } else {
+        const buf = await res.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        if (bytes.length < 2 || bytes[0] !== 0x1f || bytes[1] !== 0x8b) {
+          lastError = { stage: "notgzip", fileName, url,
+            message: `${fileName} 不是有效的 gzip` };
+          continue;
+        }
+        showLoading(`  下载完成 ${(bytes.length/1024/1024).toFixed(2)} MB，解压中…`);
+        text = await gunzipText(buf);
+      }
+      showLoading(`  解析 JSON（${(text.length/1024/1024).toFixed(1)} MB）…`);
+      const obj = JSON.parse(text);
+      showLoading(`  ✓ ${fileName} 解析成功（${Object.keys(obj).length} 状态）`);
+      return obj;
+    } catch (e) {
+      showLoading(`  ✗ ${e.message}`);
+      lastError = { stage: "parse", fileName, url,
+        message: `${fileName} 处理失败：${e.message}` };
+      continue;
+    }
   }
-  showLoading(`解析 ${name} …`);
-  try {
-    return await res.json();
-  } catch (e) {
-    throw {
-      stage: "parse",
-      name: name,
-      url: url,
-      message: e.message,
-    };
-  }
+
+  const err = new Error(lastError ? lastError.message : `找不到 ${name}`);
+  if (lastError) Object.assign(err, lastError);
+  throw err;
 }
 
 async function init() {
   try {
-    V_TABLE = await loadJSON("jie_V.json");
-    PI_TABLE = await loadJSON("jie_pi.json");
+    V_TABLE = await loadJSON("jie_V");
+    PI_TABLE = await loadJSON("jie_pi");
 
     document.getElementById("loading").classList.add("hidden");
     document.getElementById("game").classList.remove("hidden");
@@ -893,40 +935,29 @@ async function init() {
   } catch (e) {
     console.error("加载失败：", e);
 
-    if (e.stage === "fetch") {
-      showError(
-        `无法加载 ${e.name}`,
-        `<p>HTTP 状态码：<code>${e.status}</code></p>
-         <p>尝试加载的 URL：<br><code>${e.url}</code></p>
-         <p>排查步骤：</p>
-         <ul>
-           <li>直接在浏览器打开上面的 URL，看是否 404</li>
-           <li>确认 <code>${e.name}</code> 已经上传到仓库</li>
-           <li>确认 <code>${e.name}</code> 和 <code>index.html</code> 在同一目录</li>
-           <li>确认文件名大小写完全一致（Linux 服务器区分大小写）</li>
-           <li>如果刚 push，等 1~2 分钟让 GitHub Pages 构建完成</li>
-           <li>打开 DevTools → Network 面板，勾选 Disable cache 再刷新</li>
-         </ul>`
-      );
-    } else if (e.stage === "parse") {
-      showError(
-        `无法解析 ${e.name}`,
-        `<p>文件已下载，但不是有效的 JSON。</p>
-         <p>URL：<code>${e.url}</code></p>
-         <p>错误信息：<code>${e.message}</code></p>
-         <p>可能原因：</p>
-         <ul>
-           <li>文件被意外截断或损坏</li>
-           <li>该 URL 返回的是 HTML（比如 404 页面），不是 JSON</li>
-           <li>尝试重新运行 <code>export_for_web.py</code> 生成 JSON</li>
-         </ul>`
-      );
-    } else {
-      showError(
-        "未知错误",
-        `<p>${e.message || JSON.stringify(e)}</p>`
-      );
-    }
+    const isParseError = e.stage === "parse" || e.stage === "notjson";
+
+    showError(
+      isParseError ? `解析 ${e.fileName} 失败` : `加载失败`,
+      `<p><b>阶段：</b><code>${e.stage}</code></p>
+       <p><b>文件：</b><code>${e.fileName || "?"}</code></p>
+       <p><b>URL：</b><code>${e.url || "?"}</code></p>
+       <p><b>错误：</b><code>${e.message}</code></p>
+       ${e.preview ? `<p><b>预览：</b><br><code>${e.preview.replace(/</g, "&lt;")}…</code></p>` : ""}
+       <p style="margin-top:12px">${isParseError ? "手机常见原因：" : "排查步骤："}</p>
+       <ul>
+         ${isParseError ? `
+           <li><b>手机内存不足</b>：策略表太大，解析时浏览器 OOM</li>
+           <li><b>解决方案</b>：尝试用 .json.gz 格式（体积减少 80%，解析前能腾出更多内存）</li>
+           <li>或换一台内存更大的手机测试</li>
+         ` : `
+           <li>直接打开 URL 看是否 404</li>
+           <li>确认文件已上传，且与 index.html 同目录</li>
+           <li>确认文件名大小写一致</li>
+           <li>如果刚 push，等 1~2 分钟</li>
+         `}
+       </ul>`
+    );
   }
 }
 
