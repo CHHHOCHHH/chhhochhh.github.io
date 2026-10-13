@@ -1,3 +1,3 @@
-Please visit https://chhhochhh.github.io/index.html
+Please visit https://chhhochhh.github.io/jie
 
 If you have any questions, write in 'Issue'.
