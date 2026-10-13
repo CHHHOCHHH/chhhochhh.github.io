@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>结 · 拍手游戏</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #1a1d24;
+  color: #e0e0e0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.container {
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+}
+h1 {
+  font-size: 32px;
+  color: #f0c674;
+  margin-bottom: 12px;
+  letter-spacing: 4px;
+}
+.subtitle {
+  font-size: 14px;
+  color: #8a9bb0;
+  margin-bottom: 48px;
+  line-height: 1.8;
+}
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: #252932;
+  border: 2px solid #333844;
+  border-radius: 12px;
+  padding: 28px 24px;
+  transition: 0.2s;
+  text-align: left;
+  cursor: pointer;
+}
+.card:hover {
+  background: #2d3340;
+  border-color: #f0c674;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.card-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #f0c674;
+  margin-bottom: 8px;
+}
+.card-desc {
+  font-size: 14px;
+  color: #a0a8b8;
+  line-height: 1.6;
+}
+.card-tag {
+  display: inline-block;
+  font-size: 11px;
+  color: #6ca0dc;
+  background: #1f232c;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.card-arrow {
+  float: right;
+  font-size: 22px;
+  color: #6a7580;
+  transition: 0.2s;
+  margin-top: -32px;
+}
+.card:hover .card-arrow {
+  color: #f0c674;
+  transform: translateX(4px);
+}
+.footer {
+  margin-top: 48px;
+  font-size: 12px;
+  color: #6a7580;
+  line-height: 1.8;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>结</h1>
+  <div class="subtitle">拍手游戏 · 结系简化版</div>
+
+  <div class="cards">
+    <a class="card" href="1v1/index.html">
+      <div class="card-tag">1 vs 1</div>
+      <div class="card-title">单挑模式</div>
+      <div class="card-desc">
+        你 vs 策略表 AI。每轮从招式中选择一个，AI 按纳什均衡策略出招。
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="team/index.html">
+      <div class="card-tag">2 v 3 &nbsp;/&nbsp; 1 v 4</div>
+      <div class="card-title">终极模式 · 5 人混战记分</div>
+      <div class="card-desc">
+        5 人黑白配随机分队，Boss 单挑 4 人，或 2v3 团队作战。
+        多局累计分数，看谁最终分最高。
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    规则详见 <code>rules.md</code>
+  </div>
+</div>
+</body>
+</html>

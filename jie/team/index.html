@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>结 · 5人混战记分</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #1a1d24; color: #e0e0e0; padding: 16px; min-height: 100vh; }
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { text-align: center; font-size: 24px; margin-bottom: 8px; color: #f0c674; }
+.subtitle { text-align: center; color: #8a9bb0; font-size: 13px; margin-bottom: 20px; }
+.hidden { display: none !important; }
+
+.panel { background: #252932; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.panel-title { font-size: 14px; color: #8a9bb0; margin-bottom: 12px; border-bottom: 1px solid #333844; padding-bottom: 8px; }
+
+.scoreboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.score-card { background: #252932; border-radius: 8px; padding: 14px; text-align: center; border: 2px solid transparent; }
+.score-card.human { border-color: #f0c674; }
+.score-card .pname { font-size: 16px; font-weight: bold; color: #e0e0e0; margin-bottom: 6px; }
+.score-card .pscore { font-size: 28px; font-weight: bold; color: #f0c674; }
+.score-card .plabel { font-size: 11px; color: #8a9bb0; margin-top: 4px; }
+.menu-btns { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+.big-btn { background: #4a90c2; border: none; color: white; padding: 14px 40px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 16px; font-weight: bold; }
+.big-btn:hover { background: #5a9fd2; }
+.big-btn.secondary { background: #3a4150; }
+.big-btn.secondary:hover { background: #4a5260; }
+.big-btn.danger { background: #8b4049; }
+.big-btn.danger:hover { background: #a04a54; }
+
+.bw-btns { display: flex; gap: 20px; justify-content: center; margin: 24px 0; }
+.bw-btn { width: 140px; height: 140px; border-radius: 16px; border: 3px solid #3a4150; cursor: pointer; font-family: inherit; font-size: 28px; font-weight: bold; transition: 0.2s; }
+.bw-btn.black { background: #1a1a1a; color: #e0e0e0; }
+.bw-btn.black:hover { border-color: #f0c674; transform: scale(1.05); }
+.bw-btn.white { background: #f0f0f0; color: #1a1a1a; }
+.bw-btn.white:hover { border-color: #f0c674; transform: scale(1.05); }
+.bw-result { display: flex; gap: 12px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
+.bw-chip { padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 2px solid transparent; }
+.bw-chip.black { background: #2a2a2a; color: #e0e0e0; }
+.bw-chip.white { background: #e8e8e8; color: #1a1a1a; }
+.bw-chip.human { border-color: #f0c674; }
+.group-info { text-align: center; padding: 16px; background: #1f232c; border-radius: 8px; margin-top: 16px; font-size: 15px; line-height: 1.8; }
+.group-info .role-boss { color: #d97757; font-weight: bold; }
+.group-info .role-mobs { color: #7fb069; font-weight: bold; }
+.group-info .role-A { color: #6ca0dc; font-weight: bold; }
+.group-info .role-B { color: #b58cd6; font-weight: bold; }
+
+.battle-layout { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+@media (max-width: 900px) { .battle-layout { grid-template-columns: 1fr; } }
+.team-block { background: #252932; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.team-block.boss { border-left: 4px solid #d97757; }
+.team-block.mobs { border-left: 4px solid #7fb069; }
+.team-block.A { border-left: 4px solid #6ca0dc; }
+.team-block.B { border-left: 4px solid #b58cd6; }
+.team-header { font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #8a9bb0; text-transform: uppercase; }
+.player-row { display: grid; grid-template-columns: 80px 1fr; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 13px; background: #1f232c; }
+.player-row.human { background: #2a2f3d; border: 1px solid #f0c674; }
+.player-row.dead { opacity: 0.4; }
+.player-row .pname { font-weight: bold; }
+.player-row .pname.me { color: #f0c674; }
+.player-row .pstats { display: flex; gap: 12px; font-size: 12px; flex-wrap: wrap; }
+.player-row .pstats span { color: #c0c8d4; }
+.player-row .pstats .v { color: #f0c674; font-weight: bold; }
+
+.log { background: #1f232c; border-radius: 6px; padding: 10px; max-height: 440px; overflow-y: auto; font-size: 12px; line-height: 1.6; font-family: "Menlo", "Consolas", monospace; }
+.log .round-block { padding: 6px 4px; border-bottom: 1px dashed #2a2f3d; }
+.log .round-block:last-child { border-bottom: none; }
+.log .round-line { color: #8a9bb0; font-weight: bold; margin-bottom: 4px; }
+.log .result-line { padding-left: 8px; }
+.log .hp-change { color: #d97757; }
+
+.side-buttons { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.side-buttons .big-btn { width: 100%; padding: 12px; font-size: 15px; }
+
+.skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+.skill-btn { background: #2d3340; border: 1px solid #3a4150; color: #e0e0e0; padding: 8px 6px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.15s; font-family: inherit; }
+.skill-btn:hover:not(:disabled) { background: #3a4150; border-color: #6ca0dc; }
+.skill-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.skill-btn.atk { border-left: 3px solid #d97757; }
+.skill-btn.op { border-left: 3px solid #6ca0dc; }
+.skill-btn.norm { border-left: 3px solid #7fb069; }
+.skill-btn.drain { border-left: 3px solid #b58cd6; }
+.skill-btn.counter { border-left: 3px solid #f0c674; }
+.skill-btn .sid { font-size: 10px; color: #8a9bb0; display: block; }
+.skill-btn .sk-name { font-weight: bold; display: block; margin: 2px 0; }
+.skill-btn .sk-desc { font-size: 10px; color: #8a9bb0; }
+
+.target-picker { background: #1f232c; border-radius: 6px; padding: 10px; margin-top: 10px; }
+.target-picker .title { font-size: 12px; color: #8a9bb0; margin-bottom: 8px; }
+.target-picker label { display: block; padding: 6px 10px; background: #252932; border-radius: 4px; margin-bottom: 4px; cursor: pointer; font-size: 13px; }
+.target-picker label:hover { background: #2d3340; }
+.target-picker label input { margin-right: 8px; }
+.target-picker .n-input { margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.target-picker .n-input input { background: #2d3340; border: 1px solid #3a4150; color: #e0e0e0; padding: 4px 8px; border-radius: 4px; width: 60px; font-family: inherit; }
+.action-btns { display: flex; gap: 8px; margin-top: 8px; }
+.btn { background: #4a90c2; border: none; color: white; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 13px; }
+.btn:hover:not(:disabled) { background: #5a9fd2; }
+.btn:disabled { background: #3a4150; cursor: not-allowed; opacity: 0.6; }
+.btn.secondary { background: #3a4150; }
+.btn.secondary:hover { background: #4a5260; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 144, 194, 0.6); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 12px rgba(74, 144, 194, 0); }
+}
+.pulse-btn { animation: pulse 1.8s infinite; }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.overlay-card { background: #252932; border-radius: 12px; padding: 28px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+.overlay-card .title { font-size: 24px; font-weight: bold; margin-bottom: 16px; }
+.overlay-card.win .title { color: #7fb069; }
+.overlay-card.lose .title { color: #d97757; }
+.overlay-card.draw .title { color: #f0c674; }
+.overlay-card .delta { font-size: 14px; color: #c0c8d4; margin-bottom: 20px; line-height: 1.8; }
+.overlay-card .delta .score-add { color: #f0c674; font-weight: bold; }
+.overlay-card .new-scores { font-size: 13px; color: #8a9bb0; padding-top: 16px; border-top: 1px solid #333844; margin-top: 16px; line-height: 1.8; }
+.overlay-card .new-scores .row { display: flex; justify-content: space-between; padding: 4px 0; }
+.overlay-card .new-scores .row.human { color: #f0c674; font-weight: bold; }
+
+.loading { text-align: center; padding: 60px 20px; color: #8a9bb0; font-size: 14px; }
+.error-box { background: #2a1f1f; border: 1px solid #d97757; border-radius: 8px; padding: 20px; margin: 20px auto; max-width: 640px; text-align: left; font-size: 14px; line-height: 1.7; }
+.error-box h2 { color: #d97757; font-size: 18px; margin-bottom: 12px; }
+.error-box code { background: #1f232c; padding: 2px 6px; border-radius: 3px; font-family: "Menlo", monospace; font-size: 12px; color: #f0c674; word-break: break-all; }
+.error-box ul { margin: 8px 0 0 20px; }
+.error-box li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>结 · 5人混战记分</h1>
+  <div class="subtitle">终极模式 · P0是你</div>
+
+  <div id="loading" class="loading">正在加载策略表…</div>
+  <div id="error-box" class="error-box hidden"></div>
+
+  <div id="screen-menu" class="screen hidden">
+    <div class="panel">
+      <div class="panel-title">当前总分</div>
+      <div class="scoreboard" id="scoreboard"></div>
+      <div class="menu-btns">
+        <button class="big-btn" onclick="startNewGame()">开始新的一局</button>
+        <button class="big-btn danger" onclick="resetAllScores()">重置分数</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-bw" class="screen hidden">
+    <div class="panel">
+      <div class="panel-title">黑白配 · 选择你的颜色</div>
+      <div class="bw-btns">
+        <button class="bw-btn black" onclick="pickBW('b')">黑</button>
+        <button class="bw-btn white" onclick="pickBW('w')">白</button>
+      </div>
+      <div id="bw-result" class="bw-result hidden"></div>
+      <div id="group-info" class="group-info hidden"></div>
+      <div class="menu-btns" id="bw-actions" style="display:none">
+        <button class="big-btn" onclick="proceedToBattle()">开始战斗</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-battle" class="screen hidden">
+    <div class="battle-layout">
+      <div>
+        <div id="teams-display"></div>
+
+        <div class="panel" id="action-panel">
+          <div class="panel-title" id="action-title">选择招式</div>
+          <div class="skill-grid" id="skill-grid"></div>
+          <div id="target-picker" class="target-picker hidden">
+            <div class="title" id="target-title">选择目标</div>
+            <div id="target-list"></div>
+            <div class="n-input">
+              <label>发数：</label>
+              <input type="number" id="input-n" value="1" min="1" max="20">
+            </div>
+            <div class="action-btns">
+              <button class="btn" id="confirm-btn" onclick="confirmAction()">确认</button>
+              <button class="btn secondary" onclick="cancelAction()">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="panel">
+          <div class="panel-title">战斗日志</div>
+          <div class="log" id="log"></div>
+          <div class="side-buttons">
+            <button class="big-btn pulse-btn hidden" id="next-step-btn" onclick="stepOnce()">下一步 ▶</button>
+            <button class="big-btn secondary" id="back-menu-btn" onclick="backToMenu()">返回菜单</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay" class="overlay hidden">
+  <div class="overlay-card" id="overlay-card">
+    <div class="title" id="overlay-title"></div>
+    <div class="delta" id="overlay-delta"></div>
+    <button class="big-btn" onclick="closeOverlay()">确定</button>
+  </div>
+</div>
+
+<script>
+// ==================== 技能表 ====================
+const SKILLS = {
+  1:  {name:"啸波", type:"ATK", cost:1, dmg:1, multi:true},
+  2:  {name:"电波", type:"ATK", cost:2, dmg:1, multi:true},
+  3:  {name:"致命", type:"ATK", cost:3, dmg:1.5, multi:true},
+  4:  {name:"地波", type:"ATK", cost:4, dmg:2, multi:true},
+  5:  {name:"片波", type:"ATK", cost:5, dmg:2.5, multi:true},
+  6:  {name:"派波", type:"ATK", cost:6, dmg:3, multi:true},
+  7:  {name:"气波", type:"ATK", cost:7, dmg:3.5, multi:true},
+  8:  {name:"青龙波", type:"ATK", cost:8, dmg:4, multi:true},
+  9:  {name:"结", type:"OP", cost:-1},
+  10: {name:"反弹", type:"NORM", def_ids:[1,14], rebound:true},
+  11: {name:"小防", type:"NORM", def_lo:1, def_hi:2, def_ticket:true},
+  12: {name:"金龙波", type:"ATK", cost:12, dmg:6, multi:true},
+  13: {name:"大防", type:"NORM", def_lo:3, def_hi:5},
+  14: {name:"免单", type:"ATK", ticket:1, dmg:0.5, multi:true},
+  15: {name:"吸", type:"DRAIN", def_lo:1, def_hi:5, def_ticket:true, drain:[[1,5,1]]},
+  16: {name:"大吸", type:"DRAIN", cost:1, def_lo:1, def_hi:5, def_ticket:true, drain:[[1,5,2]]},
+  17: {name:"拉", type:"COUNTER", pull:true},
+  18: {name:"大拉", type:"COUNTER", cost:1, pull:true, big:true},
+  19: {name:"摩擦", type:"DRAIN", friction:true, def_lo:1, def_hi:8, def_ticket:true, drain:[[1,5,1]]},
+  20: {name:"大摩", type:"DRAIN", friction:true, big:true, def_lo:1, def_hi:99, def_ticket:true, drain:[[1,5,2],[6,8,1]]},
+  21: {name:"收", type:"NORM", cost:1, def_lo:6, def_hi:7},
+  22: {name:"青龙收", type:"NORM", cost:1, def_ids:[8]},
+  23: {name:"金龙收", type:"NORM", cost:1, def_ids:[12]},
+  24: {name:"世界末日", type:"ATK", cost:20, dmg:10, unblockable:true},
+};
+for (const sid in SKILLS) SKILLS[sid].id = parseInt(sid);
+
+const NUM_PLAYERS = 5;
+const HP_MIN = 1, HP_MAX_1V1 = 4, HP_MAX_2V3 = 7, HP_MAX_BOSS = 18;
+const PT_MAX = 20, TK_MAX = 2;
+const SCORES_KEY = "jie_ultimate_scores_v1";
+
+// ==================== 全局状态 ====================
+let PI_BOSS = null;
+let PI_2V3 = null;
+let usingBossFallback = false;
+let scores = [0, 0, 0, 0, 0];
+let state = null;
+let teamOf = {};
+let mode = "";
+let humanIdx = 0;
+let currentGameOver = false;
+let pendingAction = null;
+
+// ==================== 工具函数 ====================
+function singleCost(sk) { return sk.id === 14 ? 1 : (sk.cost || 0); }
+function canAfford(p, sk, n, numT) {
+  numT = numT || 1;
+  if (sk.cost > 0 && p.pt < sk.cost * n * numT) return false;
+  if (sk.ticket && p.tk < sk.ticket * n * numT) return false;
+  return true;
+}
+
+function defValid(defSk, atkSk) {
+  if (atkSk.unblockable) return false;
+  if (!["NORM","DRAIN","COUNTER"].includes(defSk.type)) return false;
+  if (defSk.type === "COUNTER") return false;
+  if (defSk.def_ids && defSk.def_ids.includes(atkSk.id)) return true;
+  if (defSk.def_lo === undefined) return false;
+  const sc = singleCost(atkSk);
+  if (sc < defSk.def_lo) return false;
+  if (defSk.def_hi !== undefined && sc > defSk.def_hi) return false;
+  if (atkSk.id === 14 && !defSk.def_ticket) return false;
+  return true;
+}
+
+function computeDrain(defSk, atkSk, n) {
+  if (defSk.type !== "DRAIN") return [0, 0];
+  const sc = singleCost(atkSk);
+  let ratio = 0;
+  for (const [lo, hi, r] of (defSk.drain || [])) {
+    if (sc >= lo && sc <= hi) { ratio = r; break; }
+  }
+  if (atkSk.id === 14) return [0, n * ratio];
+  return [sc * n * ratio, 0];
+}
+
+function resolveAtkVsAtk(sk0, n0, sk1, n1) {
+  const c0 = singleCost(sk0), c1 = singleCost(sk1);
+  const pairs = Math.min(n0, n1);
+  let d0 = 0, d1 = 0;
+  for (let i = 0; i < pairs; i++) {
+    if (c0 > c1) d1 += (c0 - c1) * 0.5;
+    else if (c1 > c0) d0 += (c1 - c0) * 0.5;
+  }
+  if (n0 > pairs) d1 += sk0.dmg * (n0 - pairs);
+  if (n1 > pairs) d0 += sk1.dmg * (n1 - pairs);
+  return [d0, d1];
+}
+
+function resolveAtkVsDef(atkSk, n, defSk) {
+  if (defValid(defSk, atkSk)) {
+    if (defSk.rebound) return [0, atkSk.dmg * n, 0, 0];
+    const [pts, tix] = computeDrain(defSk, atkSk, n);
+    return [0, 0, pts, tix];
+  }
+  return [atkSk.dmg * n, 0, 0, 0];
+}
+
+function sampleDist(dist) {
+  const total = dist.reduce((s, x) => s + x[2], 0);
+  let r = Math.random() * total;
+  for (const [sid, n, p] of dist) {
+    r -= p;
+    if (r <= 0) return { sid, n };
+  }
+  return { sid: dist[0][0], n: dist[0][1] };
+}
+
+function makeStateKey(p, opp, selfHMax, oppHMax) {
+  const h = Math.max(HP_MIN, Math.min(selfHMax, Math.floor(p.hp * 2)));
+  const hOpp = Math.max(HP_MIN, Math.min(oppHMax, Math.floor(opp.hp * 2)));
+  const pt = Math.max(0, Math.min(PT_MAX, Math.floor(p.pt)));
+  const ptOpp = Math.max(0, Math.min(PT_MAX, Math.floor(opp.pt)));
+  const tk = Math.max(0, Math.min(TK_MAX, Math.floor(p.tk)));
+  const tkOpp = Math.max(0, Math.min(TK_MAX, Math.floor(opp.tk)));
+  return [h, pt, tk, hOpp, ptOpp, tkOpp].join(",");
+}
+
+// ==================== AI 逻辑 ====================
+function buildCompressedQuery(me, bossOpp, selfHMax, oppHMax) {
+  const nAliveMobs = countAliveMobs();
+  const hSelf = Math.max(HP_MIN, Math.min(selfHMax, Math.floor(me.hp * 2)));
+  const ptSelf = Math.max(0, Math.min(PT_MAX, Math.floor(me.pt)));
+  const tkSelf = Math.max(0, Math.min(TK_MAX, Math.floor(me.tk)));
+
+  const scaledHP = bossOpp.hp / Math.max(1, nAliveMobs);
+  const hOpp = Math.max(1, Math.min(7, Math.ceil(scaledHP * 2)));
+  const scaledPT = Math.ceil(bossOpp.pt / Math.max(1, nAliveMobs));
+  const ptOpp = Math.max(0, Math.min(PT_MAX, scaledPT));
+  const tkOpp = Math.max(0, Math.min(TK_MAX, Math.floor(bossOpp.tk)));
+
+  return [hSelf, ptSelf, tkSelf, hOpp, ptOpp, tkOpp].join(",");
+}
+
+function buildBossQuery(bossMe, targetOpp, nEnemies) {
+  const selfHMax = usingBossFallback ? HP_MAX_2V3 : HP_MAX_BOSS;
+
+  let hSelf;
+  if (nEnemies <= 1) {
+    hSelf = Math.max(1, Math.min(selfHMax, Math.floor(bossMe.hp * 2)));
+  } else {
+    const eff = bossMe.hp / nEnemies;
+    hSelf = Math.max(1, Math.min(selfHMax, Math.ceil(eff * 2)));
+  }
+
+  const oppHMax = usingBossFallback ? HP_MAX_2V3 : HP_MAX_1V1;
+
+  const ptSelf = Math.max(0, Math.min(PT_MAX,
+    nEnemies <= 1 ? Math.floor(bossMe.pt) :
+                    Math.ceil(bossMe.pt / (nEnemies - 1))));
+  const tkSelf = Math.max(0, Math.min(TK_MAX, Math.floor(bossMe.tk)));
+
+  const hOpp = Math.max(HP_MIN, Math.min(oppHMax, Math.floor(targetOpp.hp * 2)));
+  const ptOpp = Math.max(0, Math.min(PT_MAX, Math.floor(targetOpp.pt)));
+  const tkOpp = Math.max(0, Math.min(TK_MAX, Math.floor(targetOpp.tk)));
+
+  return [hSelf, ptSelf, tkSelf, hOpp, ptOpp, tkOpp].join(",");
+}
+
+function bossChooseMoveFromBoss(bossIdx) {
+  const me = state.players[bossIdx];
+  const enemies = [];
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (teamOf[i] === "boss" || state.players[i].dead) continue;
+    enemies.push(i);
+  }
+  if (enemies.length === 0) return { sid: 9, n: 1, targets: [] };
+
+  const primary = enemies[Math.floor(Math.random() * enemies.length)];
+  const primaryOpp = state.players[primary];
+  const qState = buildBossQuery(me, primaryOpp, enemies.length);
+  const dist = PI_BOSS[qState] || [[9, 1, 1.0]];
+  const { sid, n } = sampleDist(dist);
+  const sk = SKILLS[sid];
+
+  if (sk.type !== "ATK") return { sid, n, targets: [] };
+
+  const targets = [primary];
+  const others = enemies.filter(x => x !== primary);
+  for (let k = others.length - 1; k > 0; k--) {
+    const j = Math.floor(Math.random() * (k + 1));
+    [others[k], others[j]] = [others[j], others[k]];
+  }
+  for (const other of others) {
+    const otherOpp = state.players[other];
+    const q2 = buildBossQuery(me, otherOpp, enemies.length);
+    const d2 = PI_BOSS[q2] || [[9, 1, 1.0]];
+    const r2 = sampleDist(d2);
+    if (r2.sid !== sid || r2.n !== n) continue;
+    if (!canAfford(me, sk, n, targets.length + 1)) break;
+    targets.push(other);
+  }
+  return { sid, n, targets };
+}
+
+function mobChooseMove(myIdx) {
+  const me = state.players[myIdx];
+  const bossIdx = Object.keys(teamOf).find(i => teamOf[i] === "boss");
+  if (bossIdx === undefined) return { sid: 9, n: 1, targets: [] };
+  const bossIdxNum = parseInt(bossIdx);
+  if (state.players[bossIdxNum].dead) return { sid: 9, n: 1, targets: [] };
+
+  const bossOpp = state.players[bossIdxNum];
+  const qState = buildCompressedQuery(me, bossOpp, HP_MAX_2V3, HP_MAX_2V3);
+  const dist = PI_2V3[qState] || [[9, 1, 1.0]];
+  const { sid, n } = sampleDist(dist);
+  const sk = SKILLS[sid];
+
+  if (sk.type === "ATK") return { sid, n, targets: [bossIdxNum] };
+  return { sid, n, targets: [] };
+}
+
+function teamChooseMove(myIdx) {
+  const me = state.players[myIdx];
+  const myTeam = teamOf[myIdx];
+  const enemies = [];
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (teamOf[i] === myTeam || state.players[i].dead) continue;
+    enemies.push(i);
+  }
+  if (enemies.length === 0) return { sid: 9, n: 1, targets: [] };
+
+  const primary = enemies[Math.floor(Math.random() * enemies.length)];
+  const primaryOpp = state.players[primary];
+  const qState = makeStateKey(me, primaryOpp, HP_MAX_2V3, HP_MAX_2V3);
+  const dist = PI_2V3[qState] || [[9, 1, 1.0]];
+  const { sid, n } = sampleDist(dist);
+  const sk = SKILLS[sid];
+
+  if (sk.type !== "ATK") return { sid, n, targets: [] };
+
+  const targets = [primary];
+  const others = enemies.filter(x => x !== primary);
+  for (let k = others.length - 1; k > 0; k--) {
+    const j = Math.floor(Math.random() * (k + 1));
+    [others[k], others[j]] = [others[j], others[k]];
+  }
+  for (const other of others) {
+    const otherOpp = state.players[other];
+    const q2 = makeStateKey(me, otherOpp, HP_MAX_2V3, HP_MAX_2V3);
+    const d2 = PI_2V3[q2] || [[9, 1, 1.0]];
+    const r2 = sampleDist(d2);
+    if (r2.sid !== sid || r2.n !== n) continue;
+    if (!canAfford(me, sk, n, targets.length + 1)) break;
+    targets.push(other);
+  }
+  return { sid, n, targets };
+}
+
+function countAliveMobs() {
+  let n = 0;
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (teamOf[i] === "mobs" && !state.players[i].dead) n++;
+  }
+  return n;
+}
+
+// ==================== 结算 ====================
+function resolvePair(i, j, moves) {
+  const mi = moves[i];
+  const mj = moves[j];
+  const sk_i = mi ? SKILLS[mi.sid] : null;
+  const sk_j = mj ? SKILLS[mj.sid] : null;
+
+  const iAtk_j = sk_i && sk_i.type === "ATK" && mi.targets.includes(j);
+  const jAtk_i = sk_j && sk_j.type === "ATK" && mj.targets.includes(i);
+  const def_i = (sk_i && ["NORM","DRAIN","COUNTER"].includes(sk_i.type)) ? sk_i : null;
+  const def_j = (sk_j && ["NORM","DRAIN","COUNTER"].includes(sk_j.type)) ? sk_j : null;
+
+  let d_i = 0, d_j = 0, pts_i = 0, tix_i = 0, pts_j = 0, tix_j = 0;
+
+  if (iAtk_j && jAtk_i) {
+    const [a, b] = resolveAtkVsAtk(sk_i, mi.n, sk_j, mj.n);
+    d_i += a; d_j += b;
+  } else if (iAtk_j) {
+    if (def_j) {
+      const [dd, ad, pts, tix] = resolveAtkVsDef(sk_i, mi.n, def_j);
+      d_j += dd; d_i += ad;
+      pts_j += pts; tix_j += tix;
+    } else {
+      d_j += sk_i.dmg * mi.n;
+    }
+  } else if (jAtk_i) {
+    if (def_i) {
+      const [dd, ad, pts, tix] = resolveAtkVsDef(sk_j, mj.n, def_i);
+      d_i += dd; d_j += ad;
+      pts_i += pts; tix_i += tix;
+    } else {
+      d_i += sk_j.dmg * mj.n;
+    }
+  }
+  return { d_i, d_j, pts_i, tix_i, pts_j, tix_j };
+}
+
+function runOneRound(moves) {
+  const n = NUM_PLAYERS;
+  const dmg = new Array(n).fill(0);
+  const ptDelta = new Array(n).fill(0);
+  const tkDelta = new Array(n).fill(0);
+
+  for (let i = 0; i < n; i++) {
+    if (state.players[i].dead || !moves[i]) continue;
+    const sk = SKILLS[moves[i].sid];
+    const numT = Math.max(1, moves[i].targets.length);
+    const isBoss = teamOf[i] === "boss";
+    if (sk.cost > 0) state.players[i].pt -= sk.cost * moves[i].n * numT;
+    else if (sk.cost < 0) {
+      let gain = -sk.cost;
+      if (isBoss && sk.id === 9) gain = 2;
+      state.players[i].pt += gain * moves[i].n * numT;
+    }
+    if (sk.ticket) state.players[i].tk -= sk.ticket * moves[i].n * numT;
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (state.players[i].dead) continue;
+    for (let j = i + 1; j < n; j++) {
+      if (state.players[j].dead) continue;
+      const r = resolvePair(i, j, moves);
+      dmg[i] += r.d_i; dmg[j] += r.d_j;
+      ptDelta[i] += r.pts_i; tkDelta[i] += r.tix_i;
+      ptDelta[j] += r.pts_j; tkDelta[j] += r.tix_j;
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (state.players[i].dead || !moves[i]) continue;
+    const sid = moves[i].sid;
+    if (sid !== 17 && sid !== 18) continue;
+    const isBig = sid === 18;
+    for (let j = 0; j < n; j++) {
+      if (j === i || state.players[j].dead || !moves[j]) continue;
+      const sidJ = moves[j].sid;
+      if (sidJ === 15) dmg[j] += isBig ? 2 : 1;
+      else if (sidJ === 16) dmg[j] += isBig ? 4 : 2;
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (state.players[i].dead || !moves[i]) continue;
+    const sid = moves[i].sid;
+    if (sid !== 19 && sid !== 20) continue;
+    let attacked = false;
+    for (let j = 0; j < n; j++) {
+      if (j === i || state.players[j].dead || !moves[j]) continue;
+      const skJ = SKILLS[moves[j].sid];
+      if (skJ.type === "ATK" && moves[j].targets.includes(i)) {
+        attacked = true; break;
+      }
+    }
+    if (!attacked) dmg[i] += sid === 20 ? 2.5 : 1.5;
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (state.players[i].dead) continue;
+    state.players[i].hp -= dmg[i];
+  }
+  for (let i = 0; i < n; i++) {
+    state.players[i].pt += ptDelta[i];
+    state.players[i].tk += tkDelta[i];
+    state.players[i].pt = Math.max(0, Math.min(PT_MAX, state.players[i].pt));
+    state.players[i].tk = Math.max(0, Math.min(TK_MAX, state.players[i].tk));
+  }
+  for (let i = 0; i < n; i++) {
+    if (!state.players[i].dead && state.players[i].hp <= 0) {
+      state.players[i].dead = true;
+    }
+  }
+  return dmg;
+}
+
+function checkGameOver() {
+  const teamsAlive = new Set();
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (!state.players[i].dead) teamsAlive.add(teamOf[i]);
+  }
+  if (teamsAlive.size === 0) return "draw";
+  if (teamsAlive.size === 1) return Array.from(teamsAlive)[0];
+  return null;
+}
+
+// ==================== 分数存储 ====================
+function loadScores() {
+  try {
+    const s = localStorage.getItem(SCORES_KEY);
+    return s ? JSON.parse(s) : [0, 0, 0, 0, 0];
+  } catch { return [0, 0, 0, 0, 0]; }
+}
+function saveScores() {
+  localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+}
+function resetAllScores() {
+  if (!confirm("确定要重置所有分数吗？")) return;
+  scores = [0, 0, 0, 0, 0];
+  saveScores();
+  renderMenu();
+}
+
+function renderMenu() {
+  const sb = document.getElementById("scoreboard");
+  sb.innerHTML = "";
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    const div = document.createElement("div");
+    div.className = "score-card" + (i === 0 ? " human" : "");
+    div.innerHTML = `
+      <div class="pname">P${i}${i === 0 ? "（你）" : ""}</div>
+      <div class="pscore">${scores[i]}</div>
+      <div class="plabel">分</div>
+    `;
+    sb.appendChild(div);
+  }
+}
+
+// ==================== 黑白配 ====================
+function startNewGame() {
+  showScreen("bw");
+  document.getElementById("bw-result").classList.add("hidden");
+  document.getElementById("group-info").classList.add("hidden");
+  document.getElementById("bw-actions").style.display = "none";
+}
+
+function pickBW(myColor) {
+  const colors = { 0: myColor };
+  for (let i = 1; i < NUM_PLAYERS; i++) {
+    colors[i] = Math.random() < 0.5 ? "b" : "w";
+  }
+  const nB = Object.values(colors).filter(c => c === "b").length;
+
+  const resultEl = document.getElementById("bw-result");
+  resultEl.innerHTML = "";
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    const chip = document.createElement("div");
+    chip.className = "bw-chip " + (colors[i] === "b" ? "black" : "white");
+    if (i === 0) chip.classList.add("human");
+    chip.textContent = `P${i}${i === 0 ? "（你）" : ""} · ${colors[i] === "b" ? "黑" : "白"}`;
+    resultEl.appendChild(chip);
+  }
+  resultEl.classList.remove("hidden");
+
+  if (nB === 0 || nB === NUM_PLAYERS) {
+    const info = document.getElementById("group-info");
+    info.innerHTML = `<div style="color:#d97757;font-size:16px">全 ${nB === 0 ? "白" : "黑"}，平局重来</div>`;
+    info.classList.remove("hidden");
+    document.getElementById("bw-actions").style.display = "none";
+    return;
+  }
+
+  const black = [], white = [];
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (colors[i] === "b") black.push(i);
+    else white.push(i);
+  }
+
+  let bossIdx = null, teamA = null;
+  if (black.length === 1) { bossIdx = black[0]; mode = "1v4"; }
+  else if (white.length === 1) { bossIdx = white[0]; mode = "1v4"; }
+  else if (black.length === 2) { teamA = black; mode = "2v3"; }
+  else { teamA = white; mode = "2v3"; }
+
+  const info = document.getElementById("group-info");
+  if (mode === "1v4") {
+    const mobs = [];
+    for (let i = 0; i < NUM_PLAYERS; i++) if (i !== bossIdx) mobs.push(i);
+    info.innerHTML = `
+      <div style="margin-bottom:8px;font-size:16px;color:#f0c674">模式：1 v 4</div>
+      <div><span class="role-boss">Boss</span>：P${bossIdx}${bossIdx === 0 ? "（你）" : ""}</div>
+      <div><span class="role-mobs">Mobs</span>：${mobs.map(i => "P"+i+(i===0?"（你）":"")).join("、")}</div>
+    `;
+    window._bossIdx = bossIdx;
+  } else {
+    const teamB = [];
+    for (let i = 0; i < NUM_PLAYERS; i++) if (!teamA.includes(i)) teamB.push(i);
+    info.innerHTML = `
+      <div style="margin-bottom:8px;font-size:16px;color:#f0c674">模式：2 v 3</div>
+      <div><span class="role-A">Team A</span>：${teamA.map(i => "P"+i+(i===0?"（你）":"")).join("、")}</div>
+      <div><span class="role-B">Team B</span>：${teamB.map(i => "P"+i+(i===0?"（你）":"")).join("、")}</div>
+    `;
+    window._teamA = teamA;
+  }
+  info.classList.remove("hidden");
+  document.getElementById("bw-actions").style.display = "flex";
+}
+
+function proceedToBattle() {
+  state = { players: [], round: 0 };
+  teamOf = {};
+
+  if (mode === "1v4") {
+    const bossIdx = window._bossIdx;
+    for (let i = 0; i < NUM_PLAYERS; i++) {
+      const p = { hp: 2, pt: 2, tk: 1, dead: false };
+      if (i === bossIdx) { p.hp = 9; p.pt = 4; teamOf[i] = "boss"; }
+      else { teamOf[i] = "mobs"; }
+      state.players.push(p);
+    }
+  } else {
+    const teamA = window._teamA;
+    for (let i = 0; i < NUM_PLAYERS; i++) {
+      const p = { hp: 2, pt: 2, tk: 1, dead: false };
+      if (teamA.includes(i)) { p.hp = 3.5; teamOf[i] = "A"; }
+      else { p.hp = 2; teamOf[i] = "B"; }
+      state.players.push(p);
+    }
+  }
+
+  currentGameOver = false;
+  pendingAction = null;
+  document.getElementById("log").innerHTML = "";
+  document.getElementById("target-picker").classList.add("hidden");
+  document.getElementById("next-step-btn").classList.add("hidden");
+
+  showScreen("battle");
+  renderBattle();
+  appendLog(`<div class="round-block"><div class="round-line">=== 战斗开始 · 模式 ${mode} ===</div></div>`);
+}
+
+// ==================== 战斗渲染 ====================
+function renderBattle() {
+  renderTeams();
+  renderSkillGrid();
+}
+
+function renderTeams() {
+  const container = document.getElementById("teams-display");
+  container.innerHTML = "";
+
+  const teamsOrder = mode === "1v4" ? ["boss", "mobs"] : ["A", "B"];
+  const teamLabels = { boss: "Boss", mobs: "Mobs", A: "Team A", B: "Team B" };
+
+  for (const t of teamsOrder) {
+    const members = [];
+    for (let i = 0; i < NUM_PLAYERS; i++) {
+      if (teamOf[i] === t) members.push(i);
+    }
+    const block = document.createElement("div");
+    block.className = "team-block " + t;
+    block.innerHTML = `<div class="team-header">[${teamLabels[t]}]</div>`;
+
+    for (const i of members) {
+      const p = state.players[i];
+      const row = document.createElement("div");
+      row.className = "player-row";
+      if (i === humanIdx) row.classList.add("human");
+      if (p.dead) row.classList.add("dead");
+      row.innerHTML = `
+        <div class="pname ${i === humanIdx ? "me" : ""}">P${i}${i === humanIdx ? "（你）" : ""}</div>
+        <div class="pstats">
+          <span>HP <span class="v">${p.hp.toFixed(1)}</span></span>
+          <span>点 <span class="v">${p.pt}</span></span>
+          <span>免 <span class="v">${p.tk}</span></span>
+          ${p.dead ? '<span style="color:#d97757">死亡</span>' : ""}
+        </div>
+      `;
+      block.appendChild(row);
+    }
+    container.appendChild(block);
+  }
+}
+
+function renderSkillGrid() {
+  const grid = document.getElementById("skill-grid");
+  grid.innerHTML = "";
+  const me = state.players[0];
+  const titleEl = document.getElementById("action-title");
+
+  if (currentGameOver) {
+    titleEl.textContent = "战斗结束";
+    return;
+  }
+  if (me.dead) {
+    titleEl.textContent = "（你已死亡，观战中 — 点击右侧按钮继续）";
+    return;
+  }
+
+  titleEl.textContent = "选择招式";
+
+  const sids = [1,2,3,4,5,6,7,8,12,14,9,10,11,13,21,22,23,15,16,19,20,17,18,24];
+  for (const sid of sids) {
+    const sk = SKILLS[sid];
+    const btn = document.createElement("button");
+    btn.className = "skill-btn " + sk.type.toLowerCase();
+    btn.innerHTML = `
+      <span class="sid">${sid}</span>
+      <span class="sk-name">${sk.name}</span>
+      <span class="sk-desc">${skillShortDesc(sk)}</span>
+    `;
+    if (!canAfford(me, sk, 1, 1)) {
+      btn.disabled = true;
+    } else {
+      btn.onclick = () => onSkillClick(sk);
+    }
+    grid.appendChild(btn);
+  }
+}
+
+function skillShortDesc(sk) {
+  if (sk.type === "ATK") {
+    if (sk.id === 14) return "免单×n 0.5×n";
+    if (sk.id === 24) return "20费 10伤";
+    return `${sk.cost}费 ${sk.dmg}伤` + (sk.multi ? " 多重" : "");
+  }
+  if (sk.type === "OP") return "+1点";
+  if (sk.type === "NORM") {
+    if (sk.def_ids) return "防" + sk.def_ids.map(i=>SKILLS[i].name).join("/");
+    return `防${sk.def_lo}-${sk.def_hi}费`;
+  }
+  if (sk.type === "DRAIN") return `吸${sk.def_lo}-${sk.def_hi}费`;
+  if (sk.type === "COUNTER") return "反制";
+  return "";
+}
+
+// ==================== 人类输入 ====================
+function onSkillClick(sk) {
+  if (sk.type !== "ATK") {
+    playRound({ sid: sk.id, n: 1, targets: [] });
+    return;
+  }
+  pendingAction = { sid: sk.id, sk: sk, n: 1, targets: [] };
+
+  const picker = document.getElementById("target-picker");
+  const list = document.getElementById("target-list");
+  const title = document.getElementById("target-title");
+  title.textContent = `${sk.name} · 选择目标`;
+
+  list.innerHTML = "";
+  const myTeam = teamOf[0];
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (teamOf[i] === myTeam || state.players[i].dead) continue;
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="checkbox" value="${i}" onchange="updateTargets()">
+      P${i} · HP ${state.players[i].hp.toFixed(1)} · 点 ${state.players[i].pt} · 免 ${state.players[i].tk}`;
+    list.appendChild(label);
+  }
+
+  const nInput = document.getElementById("input-n");
+  nInput.value = 1;
+  if (!sk.multi) {
+    nInput.disabled = true;
+  } else {
+    nInput.disabled = false;
+    const maxN = sk.cost > 0 ? Math.floor(state.players[0].pt / sk.cost) :
+                 sk.ticket ? state.players[0].tk : 20;
+    nInput.max = Math.max(1, maxN);
+  }
+  nInput.onchange = updateTargets;
+
+  picker.classList.remove("hidden");
+  updateTargets();
+}
+
+function updateTargets() {
+  if (!pendingAction) return;
+  const checked = Array.from(document.querySelectorAll("#target-list input:checked"))
+    .map(c => parseInt(c.value));
+  pendingAction.targets = checked;
+
+  const n = parseInt(document.getElementById("input-n").value) || 1;
+  pendingAction.n = n;
+
+  const me = state.players[0];
+  const ok = canAfford(me, pendingAction.sk, n, Math.max(1, checked.length));
+  const confirmBtn = document.getElementById("confirm-btn");
+  if (checked.length === 0) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "请选择目标";
+  } else if (!ok) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "资源不足";
+  } else {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "确认";
+  }
+}
+
+function confirmAction() {
+  if (!pendingAction || pendingAction.targets.length === 0) return;
+  playRound(pendingAction);
+  pendingAction = null;
+  document.getElementById("target-picker").classList.add("hidden");
+}
+
+function cancelAction() {
+  pendingAction = null;
+  document.getElementById("target-picker").classList.add("hidden");
+}
+
+// ==================== 回合推进 ====================
+function playRound(humanAction) {
+  if (currentGameOver) return;
+
+  state.round++;
+
+  const logEl = document.getElementById("log");
+  const block = document.createElement("div");
+  block.className = "round-block";
+  block.innerHTML = `<div class="round-line">── 第 ${state.round} 轮 ──</div>`;
+  logEl.appendChild(block);
+
+  const moves = {};
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (state.players[i].dead) continue;
+    if (i === humanIdx) {
+      if (humanAction) moves[i] = humanAction;
+    } else {
+      moves[i] = aiChoose(i);
+    }
+  }
+
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (!moves[i]) continue;
+    const line = document.createElement("div");
+    line.className = "result-line";
+    line.textContent = `P${i}: ${actionLabel(moves[i])}`;
+    block.appendChild(line);
+  }
+
+  const dmg = runOneRound(moves);
+
+  for (let i = 0; i < NUM_PLAYERS; i++) {
+    if (dmg[i] > 0) {
+      const line = document.createElement("div");
+      line.className = "result-line hp-change";
+      line.textContent = `P${i} HP-${formatNum(dmg[i])}`;
+      block.appendChild(line);
+    }
+  }
+
+  logEl.scrollTop = logEl.scrollHeight;
+
+  renderBattle();
+
+  const winner = checkGameOver();
+  if (winner) {
+    currentGameOver = true;
+    document.getElementById("next-step-btn").classList.add("hidden");
+    setTimeout(() => showGameResult(winner), 300);
+    return;
+  }
+
+  if (state.players[humanIdx].dead) {
+    document.getElementById("next-step-btn").classList.remove("hidden");
+  }
+}
+
+function aiChoose(i) {
+  const myTeam = teamOf[i];
+  if (myTeam === "boss") return bossChooseMoveFromBoss(i);
+  if (myTeam === "mobs") return mobChooseMove(i);
+  return teamChooseMove(i);
+}
+
+function stepOnce() {
+  document.getElementById("next-step-btn").classList.add("hidden");
+  playRound(null);
+}
+
+function backToMenu() {
+  if (!currentGameOver) {
+    if (!confirm("本局尚未结束，确定要返回菜单吗？")) return;
+  }
+  document.getElementById("next-step-btn").classList.add("hidden");
+  showScreen("menu");
+  renderMenu();
+}
+
+function actionLabel(a) {
+  if (!a) return "—";
+  const sk = SKILLS[a.sid];
+  let s = sk.name + (a.n > 1 ? `×${a.n}` : "");
+  if (a.targets && a.targets.length > 0) {
+    s += "→[" + a.targets.map(t => "P"+t).join(",") + "]";
+  }
+  return s;
+}
+
+function formatNum(x) {
+  return parseFloat(x.toFixed(2)).toString();
+}
+
+// ==================== 结果 ====================
+function showGameResult(winner) {
+  let msg = "", deltaLines = [];
+
+  if (mode === "1v4") {
+    const bossIdx = parseInt(Object.keys(teamOf).find(i => teamOf[i] === "boss"));
+    if (winner === "boss") {
+      scores[bossIdx] += 6;
+      msg = "Boss 胜！";
+      deltaLines.push(`Boss P${bossIdx}: <span class="score-add">+6</span>`);
+    } else if (winner === "mobs") {
+      const mobs = [];
+      for (let i = 0; i < NUM_PLAYERS; i++) if (teamOf[i] === "mobs") mobs.push(i);
+      for (const i of mobs) scores[i] += 1.5;
+      msg = "Mobs 胜！";
+      deltaLines.push(`Mobs (${mobs.map(i=>"P"+i).join(",")}): <span class="score-add">+1.5 各</span>`);
+    } else {
+      msg = "平局";
+      deltaLines.push("无人得分");
+    }
+  } else {
+    const teamA = Object.keys(teamOf).filter(i => teamOf[i] === "A").map(Number);
+    const teamB = Object.keys(teamOf).filter(i => teamOf[i] === "B").map(Number);
+    if (winner === "A") {
+      for (const i of teamA) scores[i] += 3;
+      msg = "Team A 胜！";
+      deltaLines.push(`Team A (${teamA.map(i=>"P"+i).join(",")}): <span class="score-add">+3 各</span>`);
+    } else if (winner === "B") {
+      for (const i of teamB) scores[i] += 2;
+      msg = "Team B 胜！";
+      deltaLines.push(`Team B (${teamB.map(i=>"P"+i).join(",")}): <span class="score-add">+2 各</span>`);
+    } else {
+      msg = "平局";
+      deltaLines.push("无人得分");
+    }
+  }
+
+  saveScores();
+
+  let cls;
+  if (winner === "draw") cls = "draw";
+  else {
+    const myTeam = teamOf[humanIdx];
+    cls = (winner === myTeam) ? "win" : "lose";
+  }
+
+  document.getElementById("overlay-card").className = "overlay-card " + cls;
+  document.getElementById("overlay-title").textContent = msg;
+  document.getElementById("overlay-delta").innerHTML = deltaLines.join("<br>") +
+    `<div class="new-scores">` +
+    scores.map((s, i) => `<div class="row ${i === humanIdx ? "human" : ""}">
+      <span>P${i}${i === humanIdx ? "（你）" : ""}</span><span>${s} 分</span>
+    </div>`).join("") +
+    `</div>`;
+
+  document.getElementById("overlay").classList.remove("hidden");
+}
+
+// 只关弹窗，不切页面
+function closeOverlay() {
+  document.getElementById("overlay").classList.add("hidden");
+}
+
+// ==================== 页面切换 ====================
+function showScreen(name) {
+  for (const s of ["menu", "bw", "battle"]) {
+    document.getElementById(`screen-${s}`).classList.toggle("hidden", s !== name);
+  }
+}
+
+function appendLog(html) {
+  const logEl = document.getElementById("log");
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ==================== 加载策略表 ====================
+function showError(title, detail) {
+  document.getElementById("loading").classList.add("hidden");
+  const box = document.getElementById("error-box");
+  box.innerHTML = `<h2>❌ ${title}</h2>${detail}`;
+  box.classList.remove("hidden");
+}
+
+// 用浏览器原生的 DecompressionStream 解压 gzip，不依赖外部库
+async function gunzipText(arrayBuffer) {
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("浏览器不支持 DecompressionStream（需 Chrome 80+ / Firefox 113+ / Safari 16.4+）");
+  }
+  const ds = new DecompressionStream("gzip");
+  const stream = new Blob([arrayBuffer]).stream().pipeThrough(ds);
+  return await new Response(stream).text();
+}
+
+function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
+async function loadJSON(name) {
+  const suffixes = [".json.gz", ".gz", ".json"];
+  let lastError = null;
+
+  for (const suffix of suffixes) {
+    const fileName = name + suffix;
+    const url = new URL(fileName, location.href).href;
+
+    let res;
+    try {
+      res = await fetchWithTimeout(fileName, 60000);
+    } catch (netErr) {
+      const msg = netErr.name === "AbortError"
+        ? `${fileName} 请求超时（60 秒）`
+        : `${fileName} 网络错误：${netErr.message}`;
+      lastError = { stage: "network", fileName, url, message: msg };
+      continue;
+    }
+
+    if (!res.ok) {
+      lastError = { stage: "http", fileName, url, status: res.status,
+        message: `${fileName} 返回 HTTP ${res.status}` };
+      continue;
+    }
+
+    try {
+      if (suffix === ".json") {
+        const text = await res.text();
+        if (!text || text.length === 0) {
+          lastError = { stage: "empty", fileName, url,
+            message: `${fileName} 是空文件` };
+          continue;
+        }
+        const firstChar = text.trim()[0];
+        if (firstChar !== "{" && firstChar !== "[") {
+          lastError = { stage: "notjson", fileName, url,
+            preview: text.slice(0, 200),
+            message: `${fileName} 不是有效 JSON（首字符 "${firstChar}"）` };
+          continue;
+        }
+        return JSON.parse(text);
+      } else {
+        const buf = await res.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        if (bytes.length < 2 || bytes[0] !== 0x1f || bytes[1] !== 0x8b) {
+          lastError = { stage: "notgzip", fileName, url,
+            message: `${fileName} 不是有效的 gzip 文件` };
+          continue;
+        }
+        const text = await gunzipText(buf);
+        return JSON.parse(text);
+      }
+    } catch (e) {
+      lastError = { stage: "parse", fileName, url,
+        message: `${fileName} 处理失败：${e.message}` };
+      continue;
+    }
+  }
+
+  const err = new Error(lastError ? lastError.message : `找不到 ${name} 对应的文件`);
+  if (lastError) Object.assign(err, lastError);
+  err.stage = err.stage || "notfound";
+  err.fileName = err.fileName || name;
+  err.url = err.url || new URL(name + ".json", location.href).href;
+  throw err;
+}
+
+async function init() {
+  const loading = document.getElementById("loading");
+
+  try {
+    loading.textContent = "正在加载 jie_2v3_pi …";
+    PI_2V3 = await loadJSON("jie_2v3_pi");
+    console.log("jie_2v3_pi 加载成功，共", Object.keys(PI_2V3).length, "个状态");
+  } catch (e) {
+    console.error("jie_2v3_pi 加载失败：", e);
+    showError("加载 jie_2v3_pi 失败", buildErrorDetail(e));
+    return;
+  }
+
+  try {
+    loading.textContent = "正在加载 jie_boss_pi …（首次可能需要 5~10 秒）";
+    PI_BOSS = await loadJSON("jie_boss_pi");
+    console.log("jie_boss_pi 加载成功，共", Object.keys(PI_BOSS).length, "个状态");
+  } catch (e) {
+    console.warn("jie_boss_pi 加载失败，回退到 2v3 表：", e);
+    PI_BOSS = PI_2V3;
+    usingBossFallback = true;
+    window._bossLoadError = e;
+  }
+
+  loading.classList.add("hidden");
+  document.getElementById("screen-menu").classList.remove("hidden");
+
+  if (usingBossFallback) {
+    setTimeout(() => {
+      const e = window._bossLoadError;
+      alert(
+        "⚠ Boss 策略表加载失败，已回退到 2v3 表。\n" +
+        "错误：" + (e ? `${e.stage}: ${e.message}` : "未知")
+      );
+    }, 100);
+  }
+
+  scores = loadScores();
+  renderMenu();
+}
+
+function buildErrorDetail(e) {
+  return `
+    <p><b>错误阶段：</b><code>${e.stage || "unknown"}</code></p>
+    <p><b>文件：</b><code>${e.fileName || e.name || "unknown"}</code></p>
+    <p><b>URL：</b><code>${e.url || "unknown"}</code></p>
+    <p><b>错误信息：</b><code>${e.message || JSON.stringify(e)}</code></p>
+    ${e.preview ? `<p><b>文件预览：</b><br><code>${e.preview.replace(/</g, "&lt;")}…</code></p>` : ""}
+    <p style="margin-top:12px">排查步骤：</p>
+    <ul>
+      <li>在浏览器直接打开 URL：<code>${e.url || ""}</code></li>
+      <li>如果是 404：文件没有上传，或路径不对</li>
+      <li>如果是超时：文件太大或网络太慢</li>
+      <li>如果 DecompressionStream 不支持：用 Chrome 80+ / Firefox 113+ / Safari 16.4+</li>
+      <li>打开 DevTools → Console 查看完整堆栈</li>
+    </ul>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
