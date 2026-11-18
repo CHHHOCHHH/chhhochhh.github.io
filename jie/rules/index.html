@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>结 · 新手教程与进阶规则</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #1a1d24; color: #e0e0e0; padding: 16px; min-height: 100vh; line-height: 1.6; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { text-align: center; font-size: 24px; margin-bottom: 8px; color: #f0c674; }
+.subtitle { text-align: center; color: #8a9bb0; font-size: 13px; margin-bottom: 24px; }
+.hidden { display: none !important; }
+
+.back-home-btn { display:inline-block; padding:8px 20px; background:#3a4150; color:#c0c8d4; border-radius:6px; text-decoration:none; font-size:13px; transition:0.15s; margin-bottom: 20px;}
+.back-home-btn:hover { background:#4a5260; color:#f0c674; }
+
+.panel { background: #252932; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+.panel-title { font-size: 18px; font-weight: bold; color: #f0c674; margin-bottom: 12px; border-bottom: 1px solid #333844; padding-bottom: 8px; }
+h3 { font-size: 15px; color: #6ca0dc; margin: 16px 0 8px; }
+p { margin-bottom: 10px; color: #c0c8d4; font-size: 14px; }
+
+/* 资源说明卡片 */
+.res-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+.res-card { background: #1f232c; padding: 12px; border-radius: 6px; border-left: 3px solid #6ca0dc; }
+.res-card .name { font-weight: bold; color: #f0c674; margin-bottom: 4px; }
+.res-card .desc { font-size: 13px; color: #a0a8b8; }
+
+/* 技能颜色说明 */
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 4px; }
+.tag.atk { background: #3d2a2a; color: #d97757; border: 1px solid #d97757; }
+.tag.op { background: #2a3441; color: #6ca0dc; border: 1px solid #6ca0dc; }
+.tag.norm { background: #2a3b2a; color: #7fb069; border: 1px solid #7fb069; }
+.tag.drain { background: #352a3d; color: #b58cd6; border: 1px solid #b58cd6; }
+.tag.counter { background: #3d352a; color: #f0c674; border: 1px solid #f0c674; }
+
+/* 结算公式 */
+.formula { background: #1f232c; padding: 12px; border-radius: 6px; font-family: "Menlo", "Consolas", monospace; font-size: 13px; color: #7fb069; text-align: center; margin: 12px 0; }
+.highlight { color: #d97757; font-weight: bold; }
+
+/* 折叠说明 */
+details { background: #1f232c; border-radius: 6px; margin-bottom: 8px; border: 1px solid transparent; }
+details[open] { border-color: #3a4150; }
+summary { padding: 12px; cursor: pointer; font-weight: bold; color: #e0e0e0; outline: none; }
+summary:hover { color: #f0c674; }
+details[open] summary { border-bottom: 1px solid #333844; }
+.details-content { padding: 12px; font-size: 13px; color: #a0a8b8; }
+
+/* 表格样式 */
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+th, td { padding: 8px; text-align: left; border-bottom: 1px solid #333844; }
+th { color: #f0c674; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>规则与操作说明</h1>
+  <div class="subtitle">从基础到进阶，看懂《结》的博弈机制</div>
+  
+  <a href="../index.html" class="back-home-btn">← 返回主页</a>
+
+  <!-- 基础概念 -->
+  <div class="panel">
+    <div class="panel-title">🎯 游戏目标</div>
+    <p>这是一个<strong>回合制对战游戏</strong>。你和对手同时出招，目标是<strong>把对方的生命值（HP）降到 0</strong>。</p>
+    <p>游戏开始时，双方各有 2.0 点生命。每轮你从技能表里选一个技能出招，系统会自动计算双方的伤害、防御和资源变化。</p>
+  </div>
+
+  <!-- 三大资源 -->
+  <div class="panel">
+    <div class="panel-title">💎 三大资源</div>
+    <div class="res-grid">
+      <div class="res-card" style="border-color: #d97757;">
+        <div class="name">生命值 (HP)</div>
+        <div class="desc">常规模式初始 2.0。受到攻击会扣血，降到 0 就输了。</div>
+      </div>
+      <div class="res-card" style="border-color: #6ca0dc;">
+        <div class="name">点数 (PT)</div>
+        <div class="desc">初始 2。出攻击技能要花点数，出「结」可以赚点数。</div>
+      </div>
+      <div class="res-card" style="border-color: #b58cd6;">
+        <div class="name">免单数 (TK)</div>
+        <div class="desc">初始 1。出「免单」攻击要花免单，只能用防御吸回来。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技能分类 -->
+  <div class="panel">
+    <div class="panel-title">⚔️ 技能分类</div>
+    <p>界面上每个技能按钮的左边都有一道彩色边框，代表它的类型：</p>
+    <div style="margin-top: 16px;">
+      <p><span class="tag atk">红色</span> <strong>攻击技能</strong>：如啸波、电波、地波。花费点数，造成伤害。除了啸波是 1 费 1 伤害外，其余是 n 费 0.5n 伤害。</p>
+      <p><span class="tag op">蓝色</span> <strong>运营技能</strong>：只有「结」。不攻击，而是增加 1 点数，这是唯一依靠自己获取点数的方法。</p>
+      <p><span class="tag norm">绿色</span> <strong>普通防御</strong>：如小防、大防、反弹。花费 0 或 1 点，挡下特定费用的攻击。</p>
+      <p><span class="tag drain">紫色</span> <strong>吸费防御</strong>：如吸、大摩。挡下攻击的同时，还会赚取对方的费用。</p>
+      <p><span class="tag counter">黄色</span> <strong>反制防御</strong>：如拉、大拉。专门用来惩罚对手使用紫色防御。</p>
+    </div>
+  </div>
+
+  <!-- 基础核心机制 -->
+  <div class="panel">
+    <div class="panel-title">🧠 核心机制</div>
+
+    <details>
+      <summary>1. 攻防结算（大费打小费）</summary>
+      <div class="details-content">
+        <p>当<strong>攻击</strong>遇到<strong>攻击</strong>时，比较单次费用：</p>
+        <p>· 费用相同：互相抵消，无事发生。<br>
+           · 费用不同：大费打小费，小费方受到 <span class="highlight">(大费 - 小费) × 0.5</span> 的伤害。</p>
+        <p>当<strong>攻击</strong>遇到<strong>防御</strong>时：</p>
+        <p>· 如果防御的档位刚好覆盖了攻击的单次费用，攻击被完全挡下。<br>
+           · 如果没覆盖，防守方受到全额伤害。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>2. 多重攻击（多发）是怎么算的？</summary>
+      <div class="details-content">
+        <p>很多攻击技能（如啸波、电波、致命）支持一次性打出多段伤害，表示为 <strong>×n</strong>（例如 啸波×3）。</p>
+        <p>· <strong>费用计算</strong>：总费用 = 单次费用 × 发数。比如啸波单次 1 费，出 3 发就要花 3 点。<br>
+           · <strong>伤害结算</strong>：如果对手没有防御，就会受到每发伤害的总和（比如 1 伤 × 3 = 3 伤）。<br>
+           · <strong>与防御的互动</strong>：防御看的是<strong>单次费用</strong>。如果小防（防 1-2 费）挡住了单次 1 费的啸波，那么它会挡下所有的 3 发！<br>
+           · <strong>多重攻击的互打结算</strong>：详见进阶机制与克制关系的第 5 条。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>3. 分投机制（团队/混战模式专属）</summary>
+      <div class="details-content">
+        <p>当场上有多名玩家时，你可以对多个目标同时出招！</p>
+        <p>例如：你用「啸波」同时打 P1 和 P2，每人发数 2。那么总花费是 <span class="highlight">1(单次费用) × 2(发数) × 2(目标数) = 4 点</span>。</p>
+        <p>P1 和 P2 都会分别受到 2 发啸波的攻击，他们可以各自防御。</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- 进阶机制 -->
+  <div class="panel" style="border: 1px solid #6ca0dc;">
+    <div class="panel-title" style="color: #6ca0dc;">🔬 进阶机制与克制关系</div>
+    <p style="color: #8a9bb0; margin-bottom: 16px;">看懂这些，你就能在博弈中预判对手的预判。</p>
+
+    <details>
+      <summary>1. 免单的特殊性与天敌</summary>
+      <div class="details-content">
+        <p><strong>免单</strong> 是一种特殊的攻击方式，它不消耗点数，而是消耗「免单数」，可在对方只有半血时作为最后一击造成威胁。</p>
+        <p>在结算时，<strong>免单的单次费用被视为 1 费</strong>。因此，它会被以下防御完美挡下：</p>
+        <ul>
+          <li><strong>小防</strong>（有效范围 1-2 费）</li>
+          <li><strong>吸 / 大吸 / 摩擦 / 大摩</strong>（有效范围包含 1 费）</li>
+          <li><strong>反弹</strong>（反弹不仅挡下，还会让你自己受到 0.5 的反弹伤害！）</li>
+        </ul>
+        <p>注意：大防（防 3-5 费）是无法防御免单的。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>2. 吸费防御（吸 / 大吸）的赚费机制与反制</summary>
+      <div class="details-content">
+        <p><strong>吸费防御（吸 / 大吸）</strong>：如果成功挡住对面的攻击，不仅自身不受伤，还能赚取点数。赚取的多少取决于对面的“总费用”。</p>
+        <div class="formula">赚取点数 = 对方的总费用(单次费用×发数) × 倍率</div>
+        <p>倍率规则：</p>
+        <ul>
+          <li><strong>吸</strong>：赚取 1 倍（例如对方出电波×2，总费用4，你赚 4 点）。</li>
+          <li><strong>大吸</strong>：赚取 2 倍（例如同上，你赚 8 点）。</li>
+        </ul>
+        <p>注意：如果对面出的是「结」等非攻击招式，你的吸不仅赚不到费，如果是大吸，还会白花 1 点出招费。</p>
+        <p style="color: #f0c674; margin-top: 10px;"><strong>天敌：拉 与 大拉</strong></p>
+        <p>拉和拉本身不带防御，它们唯一的用途就是惩罚这回合出「吸」的玩家：</p>
+        <table>
+          <tr><th>对手出的招</th><th>你出 拉</th><th>你出 大拉</th></tr>
+          <tr><td>对手出 吸</td><td>对手扣 1 HP</td><td>对手扣 2 HP</td></tr>
+          <tr><td>对手出 大吸</td><td>对手扣 2 HP</td><td>对手扣 4 HP</td></tr>
+        </table>
+        <p>所以，当你猜到对面要出吸来防你的攻击时，直接出一个大拉，对面就会大出血。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>3. 高风险防御：摩擦 与 大摩</summary>
+      <div class="details-content">
+        <p><strong>摩擦</strong> 和 <strong>大摩</strong> 是吸收范围最广的防御，但它们有极高的反噬风险：</p>
+        <p>如果在你出摩擦/大摩的这一回合，<strong>没有任何敌人用攻击技能打你</strong>（比如对面出了结、防御、或者去打别人了），你就会触发“自扣血”：</p>
+        <ul>
+          <li>出 摩擦：自己扣 1.5 HP</li>
+          <li>出 大摩：自己扣 2.5 HP</li>
+        </ul>
+        <p>当然，高风险对应高回报，它们能够防御大部分招式并赚费：</p>
+        <table>
+          <tr><th>防御类型</th><th>对方攻击单次费用</th><th>防御效果与赚费倍率</th></tr>
+          <tr><td rowspan="2">摩擦</td><td>1 - 5 费</td><td>成功防御，赚取 1 倍总费用</td></tr>
+          <tr><td>6 - 8 费</td><td>成功防御，但<b>不赚费</b></td></tr>
+          <tr><td rowspan="3">大摩</td><td>1 - 5 费</td><td>成功防御，赚取 2 倍总费用</td></tr>
+          <tr><td>6 - 8 费</td><td>成功防御，赚取 1 倍总费用</td></tr>
+          <tr><td>12 费 (金龙波)</td><td>成功防御，但<b>不赚费</b></td></tr>
+        </table>
+        <p>因此，只有在极度确定对方会攻击你时，才能出摩擦/大摩。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>4. 免单数的赚取机制</summary>
+      <div class="details-content">
+        <p>免单数非常珍贵，初始只有 1 个。如何获取更多免单数？</p>
+        <p>只有通过 <strong>吸、大吸、摩擦、大摩</strong> 成功防御住对方的「免单」攻击时，才能赚取对方的免单数。</p>
+        <p>赚取规则按对方消耗的免单数总量 × 倍率计算。例如：对面出 免单×3（消耗 3 个免单数）。</p>
+        <ul>
+          <li>你用 <strong>大吸</strong> 挡住，大吸倍率是 2 倍。你将赚取 3 × 2 = <strong>6 个免单数</strong>（封顶为 2）。</li>
+          <li>你用 <strong>摩擦</strong> 挡住，摩擦倍率是 1 倍，你赚取 3 个免单数（封顶为 2）。</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>5. 【重要】多重攻击互相对打的结算方式</summary>
+      <div class="details-content">
+        <p>如果双方都出了多重攻击，系统会按发数 1对1 抵消。多出来的发数，会直接命中对手。</p>
+        <p>例如：你出 啸波×3，对手出 电波×1。</p>
+        <p>· 第 1 发抵消：电波（2费）打啸波（1费），你受到 (2-1)×0.5 = 0.5 伤害。<br>
+           · 第 2、3 发：对手已经没有招式了，你的这两发啸波直接打空，造成 1+1 = 2 点真实伤害！<br>
+           · 最终结果：你受到 0.5 伤害，对方受到 2 伤害。理解这一点对于在劣势时使用 啸波×n 进行反击十分关键！
+          </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>6. 不可防御的终极大招</summary>
+      <div class="details-content">
+        <p>技能编号 24：<strong>世界末日</strong>。</p>
+        <p>需要 20 费，造成 10 点伤害，单发。它<strong>无视所有防御（包括吸、大摩、反弹）</strong>，必定命中。</p>
+        <p>唯一克制它的方法：用同样消耗 20 费的大招去打对攻，或者在此之前击杀对手。</p>
+        <p>不过，它面对多发攻击很脆弱。啸波×3 就足以和它同归于尽达成平局。</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- 操作说明 -->
+  <div class="panel">
+    <div class="panel-title">🖱️ 怎么操作</div>
+    <p>1. 轮到你时，点击你想用的技能按钮。</p>
+    <p>2. 如果是<strong>攻击技能</strong>（红色），会弹出发数选择框（以及团队模式下的目标选择）。确认无误后点「确认」。</p>
+    <p>3. 如果是<strong>防御或运营技能</strong>，点击后会直接出招。</p>
+    <p>4. 等待 AI 出招，系统会自动计算并显示结果。</p>
+    <p>5. 下方的“AI 视角分析”可以查看 AI 当前状态下想用什么招，AI 认为玩家应该出什么招，以及谁更有胜算，也可以选择关闭显示。</p>
+  </div>
+
+  <div style="text-align: center; margin-top: 30px; margin-bottom: 50px;">
+    <a href="../index.html" style="background:#4a90c2; padding:12px 32px; color:white; text-decoration:none; border-radius:8px; font-weight:bold; font-size:16px;">开始游戏</a>
+  </div>
+</div>
+</body>
+</html>
